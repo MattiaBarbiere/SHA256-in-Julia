@@ -69,9 +69,11 @@ function add_space(bit_string)
     return join(array)
 end
 
-
-############Preprossesing functions###################
-message = "RedBlockBlue"
+message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
+# I heared that I was not"
+# message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
+# I heared that I was not having lunch time with bob and Gill and I know that eventually life comes at you\
+# fast enough that not even light could catch it, defing the laws of einstein"
 function padding(bit_string)
     #I remove any spaces in the bit_string so that we have strings of the correct dimension
     bit_string = replace(bit_string, " " => "")
@@ -97,8 +99,45 @@ function padding(bit_string)
     #Final concatination
     bit_string *= len_in_binary
 
+    #Making sure the size is correct
+    @assert length(bit_string) % 512 == 0 "Bit string is not padded correctly"
     return bit_string
 end
 
-c = padding(sentence_to_binary(message))
-println(add_space(c))
+test = padding(sentence_to_binary(message))
+#println(test, length(test))
+
+function split_into_blocks(bit_string)
+    #We assume that the input is of the correct length
+    @assert length(bit_string) % 512 == 0 "The input bit string is not padded correctly" 
+
+    blocks = []
+    i = 1
+    #Iterating over the bit_string
+    while i < lastindex(bit_string)
+        #Recalling that Julia starts counting from 1 and the end in included
+        push!(blocks, bit_string[i:i+511])
+        i += 512
+    end
+
+    for i in 1:lastindex(blocks)
+        #Making sure that the block are all of the right size
+        @assert length(blocks[i]) == 512 "Blocks are not of the correct length"
+    end
+    return blocks
+end
+
+b = split_into_blocks(test)
+#print(length(b))
+
+
+
+
+
+function SHA256(message)
+    #We transform the message to binary
+    bit_string = sentence_to_binary(message)
+
+    #The Preprossesing step
+    bit_string = padding(bit_string)
+end
