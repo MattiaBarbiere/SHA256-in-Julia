@@ -3,7 +3,7 @@
 #####################Functions######################
 
 #This function converts a decimal number to binary format
-function decimal_to_binary(num, padding = 8)
+function decimal_to_binary(num; padding=8)
     return string(num, base = 2, pad=padding)
 end
 
@@ -147,7 +147,6 @@ init_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1
 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]
-println(init_K[7])
 
 # #This is useless but it helps us check that the initial hashes are correct
 # function init_hash_calc()
@@ -177,6 +176,87 @@ println(init_K[7])
 # end
 # println(init_hash_calc())
 
+##The rotation functions
+
+#The rotation functions which rotates the bit r times
+function RotR(x, r)
+    for i in 1:r
+        last_bit = x[lastindex(x)]
+        x = last_bit * x[1:lastindex(x)-1]
+    end
+    return x
+end
+
+#The right sheer function
+function ShR(x, s)
+    for i in 1:s
+        x = "0" * x[1:lastindex(x)-1]
+    end
+    return x
+end
+
+#Bit wise sum (mod 2) over three bit strings
+function bit_wise_sum(x,y,z)
+    #Make sure the strings all have the same length
+    @assert length(x) == length(y) "The strings are not the same length"
+    @assert length(x) == length(z) "The strings are not the same length"
+
+    result = ""
+    for i in 1:lastindex(x)
+        sum = (parse(Int64, x[i]) + parse(Int64,y[i]) + parse(Int64,z[i]))%2
+        result = result * string(sum)
+    end
+    return result
+end
+
+#This is the sigma 0 function that is used in the calculation
+function sigma_0(x)
+    #Rotation of 7
+    r1 = RotR(x, 7)
+
+    #Rotation of 18
+    r2 = RotR(x, 18)
+
+    #Shear of 3
+    r3 = ShR(x, 3)
+    return bit_wise_sum(r1, r2, r3)
+end
+
+#This is the sigma 1 function that is used in the calculation
+function sigma_1(x)
+    #Rotation of 17
+    r1 = RotR(x, 17)
+
+    #Rotation of 19
+    r2 = RotR(x, 19)
+
+    #Shear of 10
+    r3 = ShR(x, 10)
+    return bit_wise_sum(r1, r2, r3)
+end
+
+#println(add_space(sigma_0("11000111000111000110010011000001")))
+
+function sum_32_bits(x, y; z="0", w="0")
+    len_x = length(x)
+    #Making sure dimensions match
+    @assert len_x == length(y) "Bit strings do not have the same length"
+
+    #Convert the numbers to decimal
+    x = binary_to_decimal(x)
+    y = binary_to_decimal(y)
+    if z != "0"
+        z = binary_to_decimal(z)
+    end
+    if w != "0"
+        w = binary_to_decimal(w)
+    end
+    res = (x + y + z + w) % 2^32
+
+    return decimal_to_binary(res; padding=32)
+end
+
+#println(add_space(sum_32_bits("00000000000000000000000000000000", "00000000000000000000000000000000";z ="00000001100011111110100100000101", w="01010010011001010110010001000010")))
 
 #The function that gives us the hashed message
 function SHA256(message)
