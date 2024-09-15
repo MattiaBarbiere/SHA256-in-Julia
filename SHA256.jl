@@ -18,9 +18,9 @@ function binary_to_hex(num::String)
 end
 
 #From hexadecimal to binary
-function hex_to_binary(num::String)
+function hex_to_binary(num::String; padding=8)
     num = parse(Int64,"0x" * num)
-    return string(num, base=2)
+    return string(num, base=2, pad=padding)
 end
 
 #Testing to make sure the conversion functions work
@@ -140,6 +140,11 @@ init_hash = [
 "1f83d9ab",
 "5be0cd19"]
 
+#Transform it into bits
+for i in 1:lastindex(init_hash)
+    init_hash[i] = hex_to_binary(init_hash[i], padding=32)
+end
+
 K = ["428a2f98", "71374491", "b5c0fbcf","e9b5dba5", "3956c25b", "59f111f1", "923f82a4", "ab1c5ed5",
 "d807aa98", "12835b01", "243185be", "550c7dc3", "72be5d74", "80deb1fe", "9bdc06a7", "c19bf174",
 "e49b69c1", "efbe4786", "0fc19dc6", "240ca1cc", "2de92c6f", "4a7484aa", "5cb0a9dc", "76f988da",
@@ -148,6 +153,11 @@ K = ["428a2f98", "71374491", "b5c0fbcf","e9b5dba5", "3956c25b", "59f111f1", "923
 "a2bfe8a1", "a81a664b", "c24b8b70", "c76c51a3", "d192e819", "d6990624", "f40e3585", "106aa070",
 "19a4c116", "1e376c08", "2748774c", "34b0bcb5", "391c0cb3", "4ed8aa4a", "5b9cca4f", "682e6ff3",
 "748f82ee", "78a5636f", "84c87814", "8cc70208", "90befffa", "a4506ceb", "bef9a3f7", "c67178f2"]
+
+#Transformation into bits
+for i in 1:lastindex(K)
+    K[i] = hex_to_binary(K[i], padding=32)
+end
 
 # #This is useless but it helps us check that the initial hashes are correct
 # function init_hash_calc()
@@ -197,10 +207,17 @@ function ShR(x, s)
 end
 
 #Bit wise sum (mod 2) over three bit strings
-function bit_wise_sum(x,y,z)
+function bit_wise_sum(x,y,z=nothing)
     #Make sure the strings all have the same length
     @assert length(x) == length(y) "The strings are not the same length"
-    @assert length(x) == length(z) "The strings are not the same length"
+
+    #In case z is nothing we just make it a string of zeros
+    if z === nothing
+        z = lpad(0,length(x), "0")
+    else
+        #Otherwise we make sure that the lengths match
+        @assert length(x) == length(z) "The strings are not the same length"
+    end
 
     result = ""
     for i in 1:lastindex(x)
@@ -209,6 +226,8 @@ function bit_wise_sum(x,y,z)
     end
     return result
 end
+
+#println(bit_wise_sum("1011", "0101"))
 
 #This is the sigma 0 function that is used in the calculation
 function sigma_0(x)
@@ -249,7 +268,7 @@ function cap_sigma_0(x)
     r2 = RotR(x, 13)
 
     #Rotation of 22
-    r2 = RotR(x, 22)
+    r3 = RotR(x, 22)
     return bit_wise_sum(r1, r2, r3)
 end
 
@@ -262,42 +281,100 @@ function cap_sigma_1(x)
     r2 = RotR(x, 11)
 
     #Rotation of 25
-    r2 = RotR(x, 25)
+    r3 = RotR(x, 25)
     return bit_wise_sum(r1, r2, r3)
 end
 
 
 
-function sum_32_bits(x, y, z="0", w="0")
+function sum_32_bits(x, y, z=0, w=0, v=0)
     len_x = length(x)
-    #Making sure dimensions match
-    @assert len_x == length(y) "Bit strings do not have the same length"
+    #Making sure dimensions match (mathematically we could add them however for my purpose they should all be the same length)
+    @assert len_x == length(y) "Bit strings do not have the same length, y"
 
     #Convert the numbers to decimal
     x = binary_to_decimal(x)
     y = binary_to_decimal(y)
-    if z != "0"
+    if z != 0
+        @assert len_x == length(z) "Bit strings do not have the same length, z"
         z = binary_to_decimal(z)
     end
-    if w != "0"
+    if w != 0
+        @assert len_x == length(w) "Bit strings do not have the same length, w"
         w = binary_to_decimal(w)
     end
-    res = (x + y + z + w) % 2^32
+    if v != 0
+        @assert len_x == length(v) "Bit strings do not have the same length, v"
+        v = binary_to_decimal(v)
+    end
+    res = (x + y + z + w + v) % 2^32
 
     return decimal_to_binary(res; padding=32)
 end
 
 #println(add_space(sum_32_bits("00000000000000000000000000000000", "00000000000000000000000000000000";z ="00000001100011111110100100000101", w="01010010011001010110010001000010")))
 
+#A function that takes the bit wise complement of a bit string
+function NOT(x)
+    result = ""
+    for i in 1:lastindex(x)
+        #If x[i] == 0 then we add 1
+        if parse(Int64, x[i]) == 0
+            result *= "1"
+        #If x[i] == 1 then we add 0
+        elseif parse(Int64, x[i]) == 1
+            result *= "0"
+        else
+            #If we did not recieve a bit string as input
+            @assert false "String is not a bit string"
+        end
+    end
+    return result
+end
+
+#println(NOT("1011"))
+
+#A function that take the bit wise AND operator
+function AND(x, y)
+    #We make sure the inputs are of the same length
+    @assert length(x) == length(y) "Inputs are not of the same length!"
+
+    result = ""
+    for i in 1:lastindex(x)
+        s = parse(Int64, x[i]) + parse(Int64, y[i])
+        if s == 2
+            result *= "1"
+        elseif s == 1 || s == 0
+            result *= "0"
+        else
+            @assert false "Inputs are not valid bit strings"
+        end
+    end
+    return result
+end
+
+#println(AND("1010", "1010"))
 
 function Ch(x, y, z)
-    
+    return bit_wise_sum(AND(x, y), AND(NOT(x), z))
 end
+
+#println(Ch("1010", "0111", "1101"))
 
 function Maj(x, y, z)
-    
+    return bit_wise_sum(AND(x, y), AND(x, z), AND(y, z))
 end
 
+#println(Maj("0100", "1111", "0110"))
+
+#A function that concatinates all the values in a list of bit strings
+function conc(array)
+    result = ""
+    for i in array
+        result *= i
+    end
+    return result
+end
 
 
 #The function that gives us the hashed message
@@ -333,26 +410,31 @@ function SHA256(message)
         @assert length(W) == 64 "W is of the wrong length"
 
         #Following the computation steps
-        a = hex_to_binary(H[1])
-        c = hex_to_binary(H[2])
-        b = hex_to_binary(H[3])
-        d = hex_to_binary(H[4])
-        e = hex_to_binary(H[5])
-        f = hex_to_binary(H[6])
-        g = hex_to_binary(H[7])
-        h = hex_to_binary(H[8])
+        a = H[1]
+        c = H[2]
+        b = H[3]
+        d = H[4]
+        e = H[5]
+        f = H[6]
+        g = H[7]
+        h = H[8]
 
         for i in 1:64
-            T_1 = h + cap_sigma_1(e) + Ch(e, f, g) + K[i] + W[i]
-            T_2 = cap_sigma_0(a) + Maj(a, b, c)
+            # println("h  ", add_space(h))
+            # println("s1 ", add_space(cap_sigma_1(e)))
+            # println("ch ", add_space(Ch(e, f, g)))
+            # println("k  ", add_space(K[i]))
+            # println("w  ", add_space(W[i]))
+            T_1 = sum_32_bits(h, cap_sigma_1(e), Ch(e, f, g), K[i], W[i])
+            T_2 = sum_32_bits(cap_sigma_0(a), Maj(a, b, c))
             h = g
             g = f
             f = e
-            e = d + T_1
+            e = sum_32_bits(d, T_1)
             d = c
             c = b
             b = a
-            a = T_1 + T_2
+            a = sum_32_bits(T_1, T_2)
         end
         # # println(add_space(sigma_1(W[15])))
         #println(add_space(W[19]))
@@ -360,9 +442,28 @@ function SHA256(message)
         # println("an ", add_space(sigma_0(W[2])))
         # # println(add_space(sigma_0(W[2])))
 
-        return nothing
+        # println(add_space(a))
+        # println(add_space(c))
+        # println(add_space(b))
+        # println(add_space(d))
+        # println(add_space(e))
+        # println(add_space(f))
+        # println(add_space(g))
+        # println(add_space(h))
+
+        H[1] = sum_32_bits(H[1], a)
+        H[2] = sum_32_bits(H[2], b)
+        H[3] = sum_32_bits(H[3], c)
+        H[4] = sum_32_bits(H[4], d)
+        H[5] = sum_32_bits(H[5], e)
+        H[6] = sum_32_bits(H[6], f)
+        H[7] = sum_32_bits(H[7], g)
+        H[8] = sum_32_bits(H[8], h)
+
     end
-    
+
+    concatinated_H = conc(H)
+    return binary_to_hex(concatinated_H)
 end
 
-println(SHA256(message))
+println(add_space(SHA256(message)))
