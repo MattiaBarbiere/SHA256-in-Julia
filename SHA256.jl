@@ -68,8 +68,9 @@ function add_space(bit_string)
     return join(array)
 end
 
-message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
-# I heared that I was not"
+message = "RedBlockBlue"
+# message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
+# # I heared that I was not"
 # message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
 # I heared that I was not having lunch time with bob and Gill and I know that eventually life comes at you\
 # fast enough that not even light could catch it, defing the laws of einstein"
@@ -130,23 +131,23 @@ end
 
 #Some constants
 init_hash = [
-0x6a09e667,
-0xbb67ae85,
-0x3c6ef372,
-0xa54ff53a,
-0x510e527f,
-0x9b05688c,
-0x1f83d9ab,
-0x5be0cd19]
+"6a09e667",
+"bb67ae85",
+"3c6ef372",
+"a54ff53a",
+"510e527f",
+"9b05688c",
+"1f83d9ab",
+"5be0cd19"]
 
-init_K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2]
+K = ["428a2f98", "71374491", "b5c0fbcf","e9b5dba5", "3956c25b", "59f111f1", "923f82a4", "ab1c5ed5",
+"d807aa98", "12835b01", "243185be", "550c7dc3", "72be5d74", "80deb1fe", "9bdc06a7", "c19bf174",
+"e49b69c1", "efbe4786", "0fc19dc6", "240ca1cc", "2de92c6f", "4a7484aa", "5cb0a9dc", "76f988da",
+"983e5152", "a831c66d", "b00327c8", "bf597fc7", "c6e00bf3", "d5a79147", "06ca6351", "14292967",
+"27b70a85", "2e1b2138", "4d2c6dfc", "53380d13", "650a7354", "766a0abb", "81c2c92e", "92722c85",
+"a2bfe8a1", "a81a664b", "c24b8b70", "c76c51a3", "d192e819", "d6990624", "f40e3585", "106aa070",
+"19a4c116", "1e376c08", "2748774c", "34b0bcb5", "391c0cb3", "4ed8aa4a", "5b9cca4f", "682e6ff3",
+"748f82ee", "78a5636f", "84c87814", "8cc70208", "90befffa", "a4506ceb", "bef9a3f7", "c67178f2"]
 
 # #This is useless but it helps us check that the initial hashes are correct
 # function init_hash_calc()
@@ -213,12 +214,15 @@ end
 function sigma_0(x)
     #Rotation of 7
     r1 = RotR(x, 7)
+    #println("r1 ", add_space(r1))
 
     #Rotation of 18
     r2 = RotR(x, 18)
+    #println("r2 ", add_space(r2))
 
     #Shear of 3
     r3 = ShR(x, 3)
+    #println("r3 ", add_space(r3))
     return bit_wise_sum(r1, r2, r3)
 end
 
@@ -237,7 +241,34 @@ end
 
 #println(add_space(sigma_0("11000111000111000110010011000001")))
 
-function sum_32_bits(x, y; z="0", w="0")
+function cap_sigma_0(x)
+    #Rotation of 2
+    r1 = RotR(x, 2)
+
+    #Rotation of 13
+    r2 = RotR(x, 13)
+
+    #Rotation of 22
+    r2 = RotR(x, 22)
+    return bit_wise_sum(r1, r2, r3)
+end
+
+
+function cap_sigma_1(x)
+    #Rotation of 6
+    r1 = RotR(x, 6)
+
+    #Rotation of 11
+    r2 = RotR(x, 11)
+
+    #Rotation of 25
+    r2 = RotR(x, 25)
+    return bit_wise_sum(r1, r2, r3)
+end
+
+
+
+function sum_32_bits(x, y, z="0", w="0")
     len_x = length(x)
     #Making sure dimensions match
     @assert len_x == length(y) "Bit strings do not have the same length"
@@ -258,6 +289,17 @@ end
 
 #println(add_space(sum_32_bits("00000000000000000000000000000000", "00000000000000000000000000000000";z ="00000001100011111110100100000101", w="01010010011001010110010001000010")))
 
+
+function Ch(x, y, z)
+    
+end
+
+function Maj(x, y, z)
+    
+end
+
+
+
 #The function that gives us the hashed message
 function SHA256(message)
     #We transform the message to binary
@@ -269,16 +311,58 @@ function SHA256(message)
     #Generate the blocks of size 512
     blocks = split_into_chunks(bit_string, 512)
 
+    #Initiatlise the Hs
+    H = init_hash
+
     #We iterate over the blocks
-    for b in blocks
+    for block in blocks
         #The block is then split into 16 32bit blocks
-        W = split_into_chunks(b, 32)
+        W = split_into_chunks(block, 32)
 
         #Making sure there is the right amount
         @assert length(W) == 16 "The blocks were not divided correctly"
-    
+
+        #We loop over all the W values
+        for i in 17:64
+            #Computing the complete list of W
+            next = sum_32_bits(sigma_1(W[i-2]), W[i-7], sigma_0(W[i-15]), W[i-16])
+            push!(W, next)
+        end
+
+        #Making sure the list W is of correct length
+        @assert length(W) == 64 "W is of the wrong length"
+
+        #Following the computation steps
+        a = hex_to_binary(H[1])
+        c = hex_to_binary(H[2])
+        b = hex_to_binary(H[3])
+        d = hex_to_binary(H[4])
+        e = hex_to_binary(H[5])
+        f = hex_to_binary(H[6])
+        g = hex_to_binary(H[7])
+        h = hex_to_binary(H[8])
+
+        for i in 1:64
+            T_1 = h + cap_sigma_1(e) + Ch(e, f, g) + K[i] + W[i]
+            T_2 = cap_sigma_0(a) + Maj(a, b, c)
+            h = g
+            g = f
+            f = e
+            e = d + T_1
+            d = c
+            c = b
+            b = a
+            a = T_1 + T_2
+        end
+        # # println(add_space(sigma_1(W[15])))
+        #println(add_space(W[19]))
+        # println("hello ", add_space(W[2]))
+        # println("an ", add_space(sigma_0(W[2])))
+        # # println(add_space(sigma_0(W[2])))
+
+        return nothing
     end
-    return blocks
+    
 end
 
-#println(SHA256(message))
+println(SHA256(message))
