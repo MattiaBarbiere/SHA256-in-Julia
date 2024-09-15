@@ -29,7 +29,6 @@ function binary_to_hex(num::String)
     end
     return result
 end
-#println(binary_to_hex("00110011010001101110001000000110010"))
 
 #From hexadecimal to binary
 function hex_to_binary(num::String; padding=8)
@@ -37,17 +36,6 @@ function hex_to_binary(num::String; padding=8)
     return string(num, base=2, pad=padding)
 end
 
-#Testing to make sure the conversion functions work
-# test = 170
-# print(test, "\n")
-# c = decimal_to_binary(test)
-# println(c)
-# d = binary_to_hex(c)
-# println(d)
-# f = hex_to_binary(d)
-# println(f)
-# g = binary_to_decimal(f)
-# println(g)
 
 #A single word into binary
 function word_to_binary(word)
@@ -58,14 +46,7 @@ function word_to_binary(word)
     return result   
 end
 
-#The whole sentence into binary
-function sentence_to_binary(sentence)
-    result = raw""
-    for i in split(sentence, " ")
-        result *= word_to_binary(i)
-    end
-    return result
-end
+
 
 #A function that adds spaces every 8 bits (this is only for visual purposes)
 function add_space(bit_string)
@@ -82,12 +63,6 @@ function add_space(bit_string)
     return join(array)
 end
 
-message = "61 62 63"
-# message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
-# # I heared that I was not"
-# message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
-# I heared that I was not having lunch time with bob and Gill and I know that eventually life comes at you\
-# fast enough that not even light could catch it, defing the laws of einstein"
 
 function padding(bit_string)
     #I remove any spaces in the bit_string so that we have strings of the correct dimension
@@ -110,6 +85,7 @@ function padding(bit_string)
     
     #The length of the sentence written with 64 bits
     len_in_binary = string(len, base = 2, pad=64)
+    #println("Here ", len_in_binary, " ", len)
 
     #Final concatination
     bit_string *= len_in_binary
@@ -119,8 +95,6 @@ function padding(bit_string)
     return bit_string
 end
 
-test = padding(sentence_to_binary(message))
-#println(test, length(test))
 
 #A function that splits a bit string into many chunks of size n
 function split_into_chunks(bit_string, n)
@@ -173,6 +147,7 @@ for i in 1:lastindex(K)
     K[i] = hex_to_binary(K[i], padding=32)
 end
 
+#println(add_space(padding(word_to_binary("hello world"))))
 # #This is useless but it helps us check that the initial hashes are correct
 # function init_hash_calc()
 #     h = []
@@ -241,7 +216,6 @@ function bit_wise_sum(x,y,z=nothing)
     return result
 end
 
-#println(bit_wise_sum("1011", "0101"))
 
 #This is the sigma 0 function that is used in the calculation
 function sigma_0(x)
@@ -272,7 +246,6 @@ function sigma_1(x)
     return bit_wise_sum(r1, r2, r3)
 end
 
-#println(add_space(sigma_0("11000111000111000110010011000001")))
 
 function cap_sigma_0(x)
     #Rotation of 2
@@ -326,9 +299,6 @@ function sum_32_bits(x, y, z=0, w=0, v=0)
     return decimal_to_binary(res; padding=32)
 end
 
-#println(add_space(sum_32_bits("00000001100011111110100100000101", "01010010011001010110010001000010","00000001100011111110100100000101", "01010010011001010110010001000010")))
-
-
 
 #A function that takes the bit wise complement of a bit string
 function NOT(x)
@@ -348,7 +318,6 @@ function NOT(x)
     return result
 end
 
-#println(NOT("1011"))
 
 #A function that take the bit wise AND operator
 function AND(x, y)
@@ -369,19 +338,15 @@ function AND(x, y)
     return result
 end
 
-#println(AND("1010", "1010"))
 
 function Ch(x, y, z)
     return bit_wise_sum(AND(x, y), AND(NOT(x), z))
 end
 
-#println(Ch("1010", "0111", "1101"))
 
 function Maj(x, y, z)
     return bit_wise_sum(AND(x, y), AND(x, z), AND(y, z))
 end
-
-#println(Maj("0100", "1111", "0110"))
 
 #A function that concatinates all the values in a list of bit strings
 function conc(array)
@@ -391,12 +356,11 @@ function conc(array)
     end
     return result
 end
-#println(conc(["1011", "0000"]))
 
 #The function that gives us the hashed message
 function SHA256(message)
     #We transform the message to binary
-    bit_string = sentence_to_binary(message)
+    bit_string = word_to_binary(message)
 
     #The Preprossesing step
     bit_string = padding(bit_string)
@@ -425,16 +389,10 @@ function SHA256(message)
         #Making sure the list W is of correct length
         @assert length(W) == 64 "W is of the wrong length"
 
-
-        #println(add_space(W[10]))
-        # println(add_space(sigma_0(W[2])))
-        # println(add_space(W[1]))
-        # println("-----------------")
-        # println(add_space(W[17]))
         #Following the computation steps
         a = H[1]
-        c = H[2]
-        b = H[3]
+        b = H[2]
+        c = H[3]
         d = H[4]
         e = H[5]
         f = H[6]
@@ -442,11 +400,6 @@ function SHA256(message)
         h = H[8]
 
         for i in 1:64
-            # println("h  ", add_space(h))
-            # println("s1 ", add_space(cap_sigma_1(e)))
-            # println("ch ", add_space(Ch(e, f, g)))
-            # println("k  ", add_space(K[i]))
-            # println("w  ", add_space(W[i]))
             T_1 = sum_32_bits(h, cap_sigma_1(e), Ch(e, f, g), K[i], W[i])
             T_2 = sum_32_bits(cap_sigma_0(a), Maj(a, b, c))
             h = g
@@ -457,22 +410,9 @@ function SHA256(message)
             c = b
             b = a
             a = sum_32_bits(T_1, T_2)
+
         end
-        # # println(add_space(sigma_1(W[15])))
-        #println(add_space(W[19]))
-        # println("hello ", add_space(W[2]))
-        # println("an ", add_space(sigma_0(W[2])))
-        # # println(add_space(sigma_0(W[2])))
-
-        # println(add_space(a))
-        # println(add_space(c))
-        # println(add_space(b))
-        # println(add_space(d))
-        # println(add_space(e))
-        # println(add_space(f))
-        # println(add_space(g))
-        # println(add_space(h))
-
+        
         H[1] = sum_32_bits(H[1], a)
         H[2] = sum_32_bits(H[2], b)
         H[3] = sum_32_bits(H[3], c)
@@ -485,10 +425,9 @@ function SHA256(message)
     end
 
     concatinated_H = conc(H)
-    return concatinated_H
+    return binary_to_hex(concatinated_H)
 end
-message = "RedBlockBlue"
-println(length(SHA256(message)))
+message = "hello"
+# println(length(SHA256(message)))
 my_ = SHA256(message)
 println(my_)
-real ="1111100011110000010111110111100111111110000011000000111110000111011011010010011000110110100010111101000100101100000010001110111100110001011000010111000000111001101011100011000100000100110000110100111100100010110110111001110000001010111111010011101111011001"
