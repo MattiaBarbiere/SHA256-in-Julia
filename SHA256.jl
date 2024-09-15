@@ -9,13 +9,27 @@ end
 
 #To go from binary to decimal
 function binary_to_decimal(num)
-    return parse(Int64, num, base=2)
+    return parse(Int128, num, base=2)
 end
 
 #A function that converts from binary to hexadecimal
 function binary_to_hex(num::String)
-    return string(binary_to_decimal(num), base = 16)
+    if length(num) < 64
+        return string(binary_to_decimal(num), base = 16)
+    else
+        #This is for extra long bit strings
+        result = ""
+        i = 1
+        while i < length(num)
+            #We do increments of 64
+            increment = min(63, length(num)-i)
+            result *= string(binary_to_decimal(num[i:i+increment]), base = 16)
+            i += 64
+        end
+    end
+    return result
 end
+#println(binary_to_hex("00110011010001101110001000000110010"))
 
 #From hexadecimal to binary
 function hex_to_binary(num::String; padding=8)
@@ -68,7 +82,7 @@ function add_space(bit_string)
     return join(array)
 end
 
-message = "RedBlockBlue"
+message = "61 62 63"
 # message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
 # # I heared that I was not"
 # message = "RedBlockBlue hello how are you doing this fine morning. I am doing well thank you,  \
@@ -233,15 +247,15 @@ end
 function sigma_0(x)
     #Rotation of 7
     r1 = RotR(x, 7)
-    #println("r1 ", add_space(r1))
+    # println("r1 ", add_space(r1))
 
     #Rotation of 18
     r2 = RotR(x, 18)
-    #println("r2 ", add_space(r2))
+    # println("r2 ", add_space(r2))
 
     #Shear of 3
     r3 = ShR(x, 3)
-    #println("r3 ", add_space(r3))
+    # println("r3 ", add_space(r3))
     return bit_wise_sum(r1, r2, r3)
 end
 
@@ -312,7 +326,9 @@ function sum_32_bits(x, y, z=0, w=0, v=0)
     return decimal_to_binary(res; padding=32)
 end
 
-#println(add_space(sum_32_bits("00000000000000000000000000000000", "00000000000000000000000000000000";z ="00000001100011111110100100000101", w="01010010011001010110010001000010")))
+#println(add_space(sum_32_bits("00000001100011111110100100000101", "01010010011001010110010001000010","00000001100011111110100100000101", "01010010011001010110010001000010")))
+
+
 
 #A function that takes the bit wise complement of a bit string
 function NOT(x)
@@ -375,7 +391,7 @@ function conc(array)
     end
     return result
 end
-
+#println(conc(["1011", "0000"]))
 
 #The function that gives us the hashed message
 function SHA256(message)
@@ -390,7 +406,7 @@ function SHA256(message)
 
     #Initiatlise the Hs
     H = init_hash
-
+   
     #We iterate over the blocks
     for block in blocks
         #The block is then split into 16 32bit blocks
@@ -409,6 +425,12 @@ function SHA256(message)
         #Making sure the list W is of correct length
         @assert length(W) == 64 "W is of the wrong length"
 
+
+        #println(add_space(W[10]))
+        # println(add_space(sigma_0(W[2])))
+        # println(add_space(W[1]))
+        # println("-----------------")
+        # println(add_space(W[17]))
         #Following the computation steps
         a = H[1]
         c = H[2]
@@ -463,7 +485,10 @@ function SHA256(message)
     end
 
     concatinated_H = conc(H)
-    return binary_to_hex(concatinated_H)
+    return concatinated_H
 end
-
-println(add_space(SHA256(message)))
+message = "RedBlockBlue"
+println(length(SHA256(message)))
+my_ = SHA256(message)
+println(my_)
+real ="1111100011110000010111110111100111111110000011000000111110000111011011010010011000110110100010111101000100101100000010001110111100110001011000010111000000111001101011100011000100000100110000110100111100100010110110111001110000001010111111010011101111011001"
