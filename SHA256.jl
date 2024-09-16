@@ -427,9 +427,7 @@ function SHA256(message)
     concatinated_H = conc(H)
     return binary_to_hex(concatinated_H)
 end
-# message = "hello"
-# # println(length(SHA256(message)))
-# my_ = SHA256(message)
-# println(my_)
+message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
-print(SHA256("Amore"))
+@time SHA256(message)
+#print(SHA256(message))
